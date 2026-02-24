@@ -1,0 +1,19 @@
+[project]
+name = "vision-hackathon"
+version = "0.1.0"
+description = "Child safety monitoring system using Vision Agents"
+requires-python = ">=3.12"
+dependencies = [
+    "vision-agents[getstream,gemini,deepgram,elevenlabs,ultralytics,roboflow,moondream]",
+    "python-dotenv",
+    "opencv-python-headless",
+    "deepface",
+    "tensorflow",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["processors", "events", "tools"]
