@@ -1,43 +1,60 @@
-# RANK: 3 - Main orchestrator to initialize GetStream, the AI Agent, and route frames via VideoForwarder.
-
 import asyncio
 import os
+
 from dotenv import load_dotenv
 
-# We expect these from vision_agents, adapting based on the PLAN.md
-from livekit.plugins import getstream, gemini
-from livekit.agents import AutoSubscribe, JobContext, WorkerOptions, cli, llm
-from livekit.agents.pipeline import VoicePipelineAgent
-
-# Import our custom components once they are ready
-# from processors import ObjectDetectionProcessor, FallDetectionProcessor, ...
-# from tools.camera import LocalCameraStream
+from vision_agents.core import Agent, AgentLauncher, Runner, User
+from vision_agents.plugins import gemini, getstream
+from processors.object_detection import ObjectDetectionProcessor
+from processors.toddler_processor import ToddlerProcessor
+from processors.combined_video_publisher import CombinedVideoPublisher
 
 load_dotenv()
 
-async def entrypoint(ctx: JobContext):
-    """
-    Main entrypoint for the Vision Agent. 
-    Connects to the room, sets up the LLM, and attaches our video processors.
-    """
-    await ctx.connect(auto_subscribe=AutoSubscribe.VIDEO_ONLY)
-    print("Agent connected to the room!")
 
-    # In a full implementation, we'd add the VideoProcessors here.
-    # Currently setting up the basic agent structure.
-    
-    agent = VoicePipelineAgent(
-        vad=None, # Video only for now, or add VAD later
-        stt=None,
-        llm=gemini.LLM(model="gemini-2.5-flash-lite"),
-        tts=None,
-        instructions="You are a child safety monitoring AI. Alert on dangers. Analyze the provided events.",
+async def create_agent(**kwargs) -> Agent:
+    _ = kwargs
+    object_processor = ObjectDetectionProcessor(fps=1.0, confidence_threshold=0.5)
+    toddler_processor = ToddlerProcessor(fps=1) if os.getenv("ROBOFLOW_API_KEY") else None
+    combined_publisher = CombinedVideoPublisher(
+        object_processor=object_processor,
+        toddler_processor=toddler_processor,
+        fps=10.0,
     )
-    
-    agent.start(ctx.room)
-    await asyncio.sleep(1)
-    print("Safety Monitor is active and listening.")
+
+    processors: list = [object_processor]
+    if toddler_processor is not None:
+        processors.append(toddler_processor)
+    processors.append(combined_publisher)
+
+
+    return Agent(
+        edge=getstream.Edge(),
+        agent_user=User(name="Safety Monitor", id="agent"),
+        instructions=(
+            "You are a child safety monitoring AI. "
+            "Alert on dangers and analyze incoming events concisely."
+        ),
+        llm=gemini.LLM(model="gemini-2.5-flash-lite"),
+        processors=processors
+    )
+
+
+async def join_call(agent: Agent, call_type: str, call_id: str, **kwargs) -> None:
+    _ = kwargs
+    call = await agent.create_call(call_type, call_id)
+    async with agent.join(call):
+        await agent.simple_response("Safety monitoring active.")
+        try:
+            await asyncio.Event().wait()
+        finally:
+            await agent.finish()
+
 
 if __name__ == "__main__":
-    # We use livekit cli to start the worker process
-    cli.run_app(WorkerOptions(entrypoint_fnc=entrypoint))
+    Runner(
+        AgentLauncher(
+            create_agent=create_agent,
+            join_call=join_call,
+        )
+    ).cli()

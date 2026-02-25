@@ -1,0 +1,10 @@
+{
+  "python.defaultInterpreterPath": "${workspaceFolder}/backend/.venv/bin/python",
+  "python.terminal.activateEnvironment": true,
+  "python.analysis.extraPaths": [
+    "${workspaceFolder}/backend",
+    "${workspaceFolder}/backend/processors",
+    "${workspaceFolder}/backend/vision_agents/processors"
+  ],
+  "python.analysis.typeCheckingMode": "basic"
+}

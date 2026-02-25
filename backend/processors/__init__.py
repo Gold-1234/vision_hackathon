@@ -1,6 +1,8 @@
 # RANK: 5 - Exports processor classes like ObjectDetectionProcessor for server.py.
 # Processor imports — add each processor as it's implemented
 from .object_detection import ObjectDetectionProcessor
+from .toddler_processor import ToddlerProcessor
+from .combined_video_publisher import CombinedVideoPublisher
 # from .fall_detection import FallDetectionProcessor
 # from .face_recognition import FaceRecognitionProcessor
 # from .toddler_detection import ToddlerDetectionProcessor

@@ -4,11 +4,11 @@ version = "0.1.0"
 description = "Child safety monitoring system using Vision Agents"
 requires-python = ">=3.12"
 dependencies = [
-    "vision-agents[getstream,gemini,deepgram,elevenlabs,ultralytics,roboflow,moondream]",
-    "python-dotenv",
-    "opencv-python-headless",
-    "deepface",
-    "tensorflow",
+    "vision-agents[deepgram,elevenlabs,gemini,getstream,huggingface,moondream,nvidia,ultralytics]==0.3.8",
+    "python-dotenv==1.2.1",
+    "roboflow==1.2.14",
+    "supervision>=0.27.0.post1",
+    "opencv-python==4.10.0.84",
 ]
 
 [build-system]
