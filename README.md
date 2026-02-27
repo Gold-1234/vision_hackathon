@@ -5,6 +5,7 @@ Real-time video safety monitoring agent built with Vision Agents.
 ## What it does
 - Runs YOLO object detection (analysis only)
 - Runs Roboflow toddler/adult detection (analysis only)
+- Runs Roboflow fall detection (analysis only, gated by toddler presence)
 - Publishes a single merged annotated video stream with one combined publisher
 
 ## Project structure
@@ -49,6 +50,8 @@ cd backend
 source .venv/bin/activate
 python server.py serve --host 127.0.0.1 --port 8000
 ```
+Video stream route:
+- `http://127.0.0.1:8000/video/stream`
 
 ## 5) Local camera test (no Stream call)
 ```bash
@@ -58,8 +61,24 @@ python local_runner.py --device 0
 ```
 Press `q` to quit.
 
+## 6) Basic frontend stream viewer
+In a separate terminal:
+```bash
+cd frontend
+python3 -m http.server 5173
+```
+Open:
+- `http://127.0.0.1:5173`
+
+Default stream URL in the page:
+- `http://127.0.0.1:8000/video/stream`
+
+Frontend docs:
+- `frontend/README.md`
+
 ## Notes
 - Only one video publisher is used: `CombinedVideoPublisher`.
-- `ObjectDetectionProcessor` and `ToddlerProcessor` are analysis-only processors.
+- `ObjectDetectionProcessor`, `ToddlerProcessor`, and `FallDetectionProcessor` are analysis-only processors.
 - YOLO `person` label is filtered out from overlay/state.
 - Roboflow `toddler` detections require confidence >= `0.8`.
+- Fall detection only runs when `toddler_present == true`.

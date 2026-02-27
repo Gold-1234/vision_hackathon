@@ -14,7 +14,7 @@ from vision_agents.core.utils.video_forwarder import VideoForwarder
 DEFAULT_MODEL_ID = "toddler-detection-yxicj-sdfde/2"
 ERROR_LOG_THROTTLE_SECONDS = 10.0
 ALLOWED_CLASSES = {"toddler", "adult"}
-TODDLER_MIN_CONFIDENCE = 0.6
+TODDLER_MIN_CONFIDENCE = 0.8
 
 logger = logging.getLogger(__name__)
 
