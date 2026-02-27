@@ -3,6 +3,7 @@ from typing import Any, Optional
 
 import aiortc
 import av
+import cv2
 from vision_agents.core.processors import VideoProcessorPublisher
 from vision_agents.core.utils.video_forwarder import VideoForwarder
 from vision_agents.core.utils.video_track import QueuedVideoTrack
@@ -22,10 +23,12 @@ class CombinedVideoPublisher(VideoProcessorPublisher):
         self,
         object_processor: Any,
         toddler_processor: Optional[Any] = None,
+        fall_processor: Optional[Any] = None,
         fps: float = 10.0,
     ) -> None:
         self.object_processor = object_processor
         self.toddler_processor = toddler_processor
+        self.fall_processor = fall_processor
         self.fps = float(fps)
 
         self._forwarder: Optional[VideoForwarder] = None
@@ -33,6 +36,8 @@ class CombinedVideoPublisher(VideoProcessorPublisher):
         self._handler_registered = False
         self._processing_lock = asyncio.Lock()
         self._video_track = QueuedVideoTrack(width=1280, height=720, fps=max(1, int(self.fps)))
+        self._latest_jpeg: Optional[bytes] = None
+        self._jpeg_lock = asyncio.Lock()
 
     async def process_video(
         self,
@@ -99,13 +104,27 @@ class CombinedVideoPublisher(VideoProcessorPublisher):
                 toddler_detections = self.toddler_processor.state().get("detections", []) or []
             annotated = self._draw_detection_list(annotated, toddler_detections, color=(0, 165, 255))
 
+            fall_detections = []
+            if self.fall_processor is not None and hasattr(self.fall_processor, "state"):
+                fall_detections = self.fall_processor.state().get("detections", []) or []
+            annotated = self._draw_detection_list(annotated, fall_detections, color=(0, 0, 255))
+
             out_frame = av.VideoFrame.from_ndarray(annotated, format="bgr24")
             out_frame.pts = frame.pts
             out_frame.time_base = frame.time_base
             await self._video_track.add_frame(out_frame)
 
+            ok, encoded = cv2.imencode(".jpg", annotated, [int(cv2.IMWRITE_JPEG_QUALITY), 80])
+            if ok:
+                async with self._jpeg_lock:
+                    self._latest_jpeg = encoded.tobytes()
+
     def publish_video_track(self) -> aiortc.VideoStreamTrack:
         return self._video_track
+
+    async def get_latest_jpeg(self) -> Optional[bytes]:
+        async with self._jpeg_lock:
+            return self._latest_jpeg
 
     async def stop_processing(self) -> None:
         if self._forwarder is not None and self._handler_registered:

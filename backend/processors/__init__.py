@@ -3,6 +3,11 @@
 from .object_detection import ObjectDetectionProcessor
 from .toddler_processor import ToddlerProcessor
 from .combined_video_publisher import CombinedVideoPublisher
+
+try:
+    from .fall_detection import FallDetectionProcessor
+except ModuleNotFoundError:
+    FallDetectionProcessor = None
 # from .fall_detection import FallDetectionProcessor
 # from .face_recognition import FaceRecognitionProcessor
 # from .toddler_detection import ToddlerDetectionProcessor

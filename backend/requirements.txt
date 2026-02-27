@@ -1,5 +1,8 @@
 vision-agents[deepgram,elevenlabs,gemini,getstream,huggingface,moondream,nvidia,ultralytics]==0.3.8
+vision-agents-plugins-cartesia==0.3.8
 python-dotenv==1.2.1
 roboflow==1.2.14
 supervision==0.27.0.post1
 opencv-python==4.10.0.84
+fastapi==0.116.1
+uvicorn==0.35.0
