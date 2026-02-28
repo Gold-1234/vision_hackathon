@@ -21,11 +21,11 @@ function InsightCard({ value }) {
   }
 
   return (
-    <div className={`${bgColor} flex flex-col gap-2 p-6 rounded-2xl`}>
+    <div className={`${bgColor} flex flex-col gap-2 p-6 rounded-2xl `}>
       <div className="flex items-center gap-4">
         <FontAwesomeIcon
           icon={faMagnifyingGlass}
-          style={{ color: textColor }}
+          style={{ color: iconColor }}
           size="lg"
         />
         <h5 className={`${textColor} h5`}>Insights</h5>
