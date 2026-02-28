@@ -9,7 +9,7 @@ function ActivityCard({ activity }) {
   useEffect(() => {
     if (isPlaying) {
       intervalRef.current = setInterval(() => {
-        setTime(prevTime => prevTime + 1000);
+        setTime((prevTime) => prevTime + 1000);
       }, 1000);
     } else {
       clearInterval(intervalRef.current);
@@ -23,7 +23,7 @@ function ActivityCard({ activity }) {
   const handlePlay = () => {
     setIsPlaying(!isPlaying);
 
-    if (!isPlaying)  {
+    if (!isPlaying) {
       setTime(0);
     }
   };
@@ -34,19 +34,14 @@ function ActivityCard({ activity }) {
     const minutes = Math.floor((totalSeconds % 3600) / 60);
     const seconds = totalSeconds % 60;
 
-    return (
-      [hours, minutes, seconds]
-        .map(num => num.toString().padStart(2, '0'))
-        .join(':')
-    );
+    return [hours, minutes, seconds]
+      .map((num) => num.toString().padStart(2, "0"))
+      .join(":");
   };
 
   return (
     <div className="flex flex-col bg-white p-6 box-shadow rounded-3xl gap-7 w-96">
-      <PlayButton
-        isPlaying={isPlaying}
-        onClick={handlePlay}
-      ></PlayButton>
+      <PlayButton isPlaying={isPlaying} onClick={handlePlay}></PlayButton>
 
       <div className="flex flex-col gap-2">
         <h4 className="h4">Current Activity</h4>

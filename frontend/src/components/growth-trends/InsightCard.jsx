@@ -33,7 +33,9 @@ function InsightCard({ value }) {
 
       <ul className="list-disc list-inside ml-3">
         {value.insights.map((v, i) => (
-          <li key={v.id} className="list">{v.text}</li>
+          <li key={v.id} className="list">
+            {v.text}
+          </li>
         ))}
       </ul>
     </div>
