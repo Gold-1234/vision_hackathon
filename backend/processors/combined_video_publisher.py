@@ -104,10 +104,13 @@ class CombinedVideoPublisher(VideoProcessorPublisher):
                 toddler_detections = self.toddler_processor.state().get("detections", []) or []
             annotated = self._draw_detection_list(annotated, toddler_detections, color=(0, 165, 255))
 
-            fall_detections = []
             if self.fall_processor is not None and hasattr(self.fall_processor, "state"):
-                fall_detections = self.fall_processor.state().get("detections", []) or []
-            annotated = self._draw_detection_list(annotated, fall_detections, color=(0, 0, 255))
+                fall_state = self.fall_processor.state()
+                if fall_state.get("fall_present"):
+                    # Find the bounding box for the falling person
+                    for det in fall_state.get("detections", []):
+                        if det.get("is_falling", False):
+                            annotated = draw_bbox(annotated, det.get("bbox", (0, 0, 0, 0)), label="FALL DETECTED!", color=(0, 0, 255), thickness=3)
 
             out_frame = av.VideoFrame.from_ndarray(annotated, format="bgr24")
             out_frame.pts = frame.pts
