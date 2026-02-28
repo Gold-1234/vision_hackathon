@@ -11,7 +11,7 @@ load_dotenv()
 
 async def main() -> None:
     call_type = os.getenv("STREAM_CALL_TYPE", "default")
-    call_id = os.getenv("STREAM_CALL_ID", "vision-test-1")
+    call_id = os.getenv("STREAM_CALL_ID", "vision-test")
     human_id = os.getenv("STREAM_HUMAN_USER_ID", "user-demo-agent")
     creator_id = os.getenv("STREAM_CREATOR_ID", "agent")
 
@@ -36,6 +36,9 @@ async def main() -> None:
         "skip_lobby": "true",
         "user_name": "Human Camera",
         "video_encoder": "h264",
+        "bitrate": "2500000",
+        "w": "1280",
+        "h": "720",
         "channel_type": call_type,
     }
     print(base + call_id + "?" + urlencode(params))

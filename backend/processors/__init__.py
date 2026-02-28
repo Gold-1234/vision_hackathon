@@ -3,6 +3,7 @@
 from .object_detection import ObjectDetectionProcessor
 from .toddler_processor import ToddlerProcessor
 from .combined_video_publisher import CombinedVideoPublisher
+from .crying_audio_detector import CryingAudioDetector
 
 try:
     from .fall_detection import FallDetectionProcessor

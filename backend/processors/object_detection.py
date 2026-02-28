@@ -1,4 +1,5 @@
 import asyncio
+import os
 from typing import Any, Optional
 
 import aiortc
@@ -23,7 +24,7 @@ class ObjectDetectionProcessor(VideoProcessor):
 
     def __init__(
         self,
-        fps: float = 3.0,
+        fps: float = 1.0,
         model_path: str = "yolo11n.pt",
         confidence_threshold: float = 0.5,
     ) -> None:
@@ -33,6 +34,12 @@ class ObjectDetectionProcessor(VideoProcessor):
 
         print(f"Loading YOLO model from {model_path}...")
         self.model = YOLO(model_path)
+        self.device = self._resolve_device()
+        try:
+            self.model.to(self.device)
+        except Exception:
+            # Some ultralytics backends may not support .to(); fallback to device arg in inference.
+            pass
         print("YOLO model loaded.")
 
         self.latest_detections: list[dict[str, Any]] = []
@@ -104,13 +111,32 @@ class ObjectDetectionProcessor(VideoProcessor):
         frame_bgr: np.ndarray,
     ) -> list[dict[str, Any]]:
         _ = frame_number
-        results = self.model(frame_bgr, verbose=False, conf=self.confidence_threshold)
+        results = self.model(
+            frame_bgr,
+            verbose=False,
+            conf=self.confidence_threshold,
+            device=self.device,
+        )
         detections = format_yolo_detections(results)
         filtered = [
             det for det in detections
             if str(det.get("label", "")).strip().lower() not in EXCLUDED_YOLO_LABELS
         ]
         return filtered
+
+    @staticmethod
+    def _resolve_device() -> str:
+        env_device = os.getenv("YOLO_DEVICE", "").strip().lower()
+        if env_device:
+            return env_device
+        try:
+            import torch
+
+            if torch.backends.mps.is_available():
+                return "mps"
+        except Exception:
+            pass
+        return "cpu"
 
     def process_frame(self, frame_number: int, frame: np.ndarray) -> np.ndarray:
         """
