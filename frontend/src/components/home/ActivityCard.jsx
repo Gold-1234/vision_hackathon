@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import PlayButton from "./PlayButton";
 
-function ActivityCard({ activity }) {
+function ActivityCard({ activity, onStart, onStop, streamStatus, isLive }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [time, setTime] = useState(0);
   const intervalRef = useRef(null);
 
   useEffect(() => {
-    if (isPlaying) {
+    if (isPlaying && isLive) {
       intervalRef.current = setInterval(() => {
         setTime((prevTime) => prevTime + 1000);
       }, 1000);
@@ -18,14 +18,17 @@ function ActivityCard({ activity }) {
     return () => {
       clearInterval(intervalRef.current);
     };
-  }, [isPlaying]);
+  }, [isPlaying, isLive]);
 
   const handlePlay = () => {
-    setIsPlaying(!isPlaying);
-
     if (!isPlaying) {
       setTime(0);
+      onStart && onStart();
+    } else {
+      onStop && onStop();
     }
+
+    setIsPlaying(!isPlaying);
   };
 
   const formatTime = (milliseconds) => {
@@ -53,8 +56,14 @@ function ActivityCard({ activity }) {
         </div>
       </div>
 
-      <div className="bg-grey-trans px-4 py-1 rounded-lg">
-        <p className="small grey">Session duration: {formatTime(time)}</p>
+      <div className="">
+        <div className="bg-grey-trans px-4 py-1 rounded-lg mb-2">
+          <p className="small grey">Session duration: {formatTime(time)}</p>
+        </div>
+
+        <div className="bg-grey-trans px-4 py-1 rounded-lg">
+          <p className="small grey">Stream: {streamStatus}</p>
+        </div>
       </div>
     </div>
   );

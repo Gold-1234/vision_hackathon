@@ -23,11 +23,7 @@ async def create_agent(**kwargs) -> Agent:
     object_processor = ObjectDetectionProcessor(fps=1.0, confidence_threshold=0.5)
     fall_processor = FallDetectionProcessor(fps=2.0)
     toddler_processor = ToddlerProcessor(fps=1) if os.getenv("ROBOFLOW_API_KEY") else None
-<<<<<<< Updated upstream
-
-=======
     
->>>>>>> Stashed changes
     combined_publisher = CombinedVideoPublisher(
         object_processor=object_processor,
         toddler_processor=toddler_processor,
@@ -36,14 +32,7 @@ async def create_agent(**kwargs) -> Agent:
     )
     set_publisher(combined_publisher)
 
-<<<<<<< Updated upstream
-    crying_detector = CryingAudioDetector()
-    set_crying_detector(crying_detector)
-
-    processors: list = [object_processor, crying_detector]
-=======
     processors: list = [object_processor, fall_processor]
->>>>>>> Stashed changes
     if toddler_processor is not None:
         processors.append(toddler_processor)
     processors.append(combined_publisher)
