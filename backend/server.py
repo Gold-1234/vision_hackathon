@@ -8,6 +8,7 @@ from vision_agents.core import Agent, AgentLauncher, Runner, User
 from vision_agents.plugins import cartesia, gemini, getstream
 from processors.object_detection import ObjectDetectionProcessor
 from processors.toddler_processor import ToddlerProcessor
+from processors.fall_detection import FallDetectionProcessor
 from processors.combined_video_publisher import CombinedVideoPublisher
 from processors.crying_audio_detector import CryingAudioDetector
 from processors.face_recognition import FaceRecognitionProcessor
@@ -23,16 +24,19 @@ logging.basicConfig(level=logging.INFO)
 async def create_agent(**kwargs) -> Agent:
     _ = kwargs
     object_processor = ObjectDetectionProcessor(fps=1.0, confidence_threshold=0.5)
+    fall_processor = FallDetectionProcessor(fps=2.0)
     toddler_processor = ToddlerProcessor(fps=1) if os.getenv("ROBOFLOW_API_KEY") else None
     face_processor = FaceRecognitionProcessor(
-        fps=1.0,
+        fps=2.0,
+        gallery_dir="data/know_faces",
         match_threshold=0.35,
     )
     set_face_recognizer(face_processor)
 
     combined_publisher = CombinedVideoPublisher(
-        object_processor=None,
-        toddler_processor=None,
+        object_processor=object_processor,
+        toddler_processor=toddler_processor,
+        fall_processor=fall_processor,
         face_processor=face_processor,
         fps=10.0,
     )
@@ -41,13 +45,12 @@ async def create_agent(**kwargs) -> Agent:
     crying_detector = CryingAudioDetector()
     set_crying_detector(crying_detector)
 
-    processors: list = [object_processor, crying_detector, face_processor]
-
+    processors: list = [object_processor, crying_detector, fall_processor, face_processor]
     if toddler_processor is not None:
         processors.append(toddler_processor)
     processors.append(combined_publisher)
-  
-    if(crying_detector):
+
+    if crying_detector:
         print("initialised crying detector")
 
     tts_engine = cartesia.TTS() if os.getenv("CARTESIA_API_KEY") else None
@@ -61,8 +64,11 @@ async def create_agent(**kwargs) -> Agent:
         ),
         llm=gemini.LLM(model="gemini-2.5-flash-lite"),
         tts=tts_engine,
-        processors=processors
+        processors=processors,
     )
+
+    agent._toddler_processor = toddler_processor
+    agent._fall_processor = fall_processor
 
     return agent
 
@@ -83,25 +89,30 @@ async def join_call(agent: Agent, call_type: str, call_id: str, **kwargs) -> Non
     async with agent.join(call):
         await agent.simple_response("Safety monitoring active.")
         fall_processor = getattr(agent, "_fall_processor", None)
+        toddler_processor = getattr(agent, "_toddler_processor", None)
         fall_announced = False
         unknown_face_announced_ts: float | None = None
         try:
             while True:
                 await asyncio.sleep(0.25)
-                if fall_processor is None:
-                    pass
-                fall_now = bool(fall_processor.state().get("fall_detected", False))
-                if fall_now and not fall_announced:
-                    await agent.simple_response("Fall detected")
-                    fall_announced = True
-                elif not fall_now and fall_announced:
-                    fall_announced = False
+                if fall_processor is not None:
+                    fall_now = bool(fall_processor.state().get("fall_detected", False))
+                    if fall_now and not fall_announced:
+                        await agent.simple_response("Fall detected")
+                        fall_announced = True
+                    elif not fall_now and fall_announced:
+                        fall_announced = False
 
                 try:
                     from processor_registry import get_face_recognizer
 
                     recognizer = get_face_recognizer()
                     if recognizer is None:
+                        continue
+                    if toddler_processor is None:
+                        continue
+                    toddler_present = bool(toddler_processor.state().get("toddler_present", False))
+                    if not toddler_present:
                         continue
                     state = recognizer.state()
                     if not state.get("unknown_detected"):

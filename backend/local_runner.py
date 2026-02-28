@@ -1,15 +1,17 @@
 import cv2
 import time
 import argparse
-from processors import ObjectDetectionProcessor
+from processors import ObjectDetectionProcessor, FallDetectionProcessor
+from processors.base import draw_bbox
 from tools.camera import LocalCameraStream
 
 def main(device_id: int):
     print("Initializing Vision System Local Runner...")
     
-    # 1. Initialize the YOLO Object Detection Processor
+    # 1. Initialize the Processors
     # FPS doesn't strictly matter here since we are just pulling frames as fast as we process
     detector = ObjectDetectionProcessor(fps=30, confidence_threshold=0.5)
+    fall_detector = FallDetectionProcessor(fps=30, confidence_threshold=0.5)
     
     # 2. Initialize Camera
     camera = LocalCameraStream(device_id=device_id, target_fps=30)
@@ -35,15 +37,30 @@ def main(device_id: int):
             # Process the frame
             # The processor returns the annotated frame (boxes drawn)
             annotated_frame = detector.process_frame(frame_count, frame)
+            
+            # Fall detector expects the _detect synchronous method for now
+            fall_detections = fall_detector._detect(frame_count, frame)
+            fall_detector.latest_detections = fall_detections
+            
+            # Draw fall detections
+            fall_detected = False
+            for det in fall_detections:
+                if det.get("is_falling", False):
+                    fall_detected = True
+                    annotated_frame = draw_bbox(annotated_frame, det.get("bbox", (0,0,0,0)), label="FALL DETECTED!", color=(0, 0, 255), thickness=3)
+
+            fall_detector.fall_present = fall_detected
             frame_count += 1
             
             # Simulated event logging
             detections = getattr(detector, 'latest_detections', [])
             if len(detections) > 0 and frame_count % 30 == 0:
                 print(f"Frame {frame_count} - Detected {len(detections)} objects. E.g. {detections[0]['label']}")
+            if fall_detected and frame_count % 5 == 0:
+                print(f"⚠️ Frame {frame_count} - FALL DETECTED!")
             
             # Display the result
-            cv2.imshow('Vision Hackathon - Live Object Detection', annotated_frame)
+            cv2.imshow('Vision Hackathon - Live Object & Fall Detection', annotated_frame)
             
     except KeyboardInterrupt:
         print("Interrupted by user.")

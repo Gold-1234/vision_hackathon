@@ -5,9 +5,13 @@
 :root {
   /* colors */
   --primary: #5DB8A1;
+  --primary-trans: #EBF6F3;
   --secondary: #F4B860;
+  --secondary-trans: #FDF6EC;
   --neutral: #363636;
   --white: #FFFFFF;
+  --grey: #898989;
+  --grey-trans: #F7F7F7;
 
   /* size */
   --h1: 2.5rem;
@@ -25,6 +29,10 @@ html {
   scroll-behavior: smooth;
 }
 
+.section {
+  @apply mx-[5.5rem] my-5;
+}
+
 /* ======= fonts ========== */
 .h1 {
   font-size: var(--h1);
@@ -33,6 +41,7 @@ html {
   font-style: normal;
   color: var(--primary);
   letter-spacing: 1%;
+  margin-bottom: 1.5rem;
 }
 
 .h2 {
@@ -122,17 +131,44 @@ html {
   background-color: var(--grey);
 }
 
+.bg-white {
+  background-color: var(--white);
+}
+
+
 .bg-primary-trans {
-  background-color: var(--primary);
-  opacity: 12%;
+  background-color: var(--primary-trans);
 }
 
 .bg-secondary-trans {
-  background-color: var(--secondary);
-  opacity: 12%;
+  background-color: var(--secondary-trans);
 }
 
 .bg-grey-trans {
-  background-color: var(--grey);
-  opacity: 12%;
+  background-color: var(--grey-trans);
+}
+
+/* ======= font colors ========== */
+.primary {
+  color: var(--primary);
+}
+
+.secondary {
+  color: var(--secondary);
+}
+
+.grey {
+  color: var(--grey);
+}
+
+.white {
+  color: var(--white);
+}
+
+.neutral {
+  color: var(--neutral);
+}
+
+.box-shadow {
+  box-shadow: 4px 4px 10px 2px rgba(0, 0, 0, 0.05);
 }
