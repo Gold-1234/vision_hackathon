@@ -8,7 +8,9 @@ from vision_agents.plugins import cartesia, gemini, getstream
 from processors.object_detection import ObjectDetectionProcessor
 from processors.toddler_processor import ToddlerProcessor
 from processors.combined_video_publisher import CombinedVideoPublisher
-from routes import video_router
+from processors.crying_audio_detector import CryingAudioDetector
+from processor_registry import set_crying_detector
+from routes import video_router, audio_router
 from video_stream_registry import set_publisher
 
 
@@ -27,12 +29,16 @@ async def create_agent(**kwargs) -> Agent:
     )
     set_publisher(combined_publisher)
 
-    processors: list = [object_processor]
+    crying_detector = CryingAudioDetector()
+    set_crying_detector(crying_detector)
+
+    processors: list = [object_processor, crying_detector]
     if toddler_processor is not None:
         processors.append(toddler_processor)
     processors.append(combined_publisher)
   
-
+    if(crying_detector):
+        print("initialised crying detector")
 
     tts_engine = cartesia.TTS() if os.getenv("CARTESIA_API_KEY") else None
 
@@ -83,4 +89,5 @@ if __name__ == "__main__":
         )
     )
     runner.fast_api.include_router(video_router)
+    runner.fast_api.include_router(audio_router)
     runner.cli()
