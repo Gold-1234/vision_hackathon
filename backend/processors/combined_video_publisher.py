@@ -24,11 +24,13 @@ class CombinedVideoPublisher(VideoProcessorPublisher):
         object_processor: Any,
         toddler_processor: Optional[Any] = None,
         fall_processor: Optional[Any] = None,
+        face_processor: Optional[Any] = None,
         fps: float = 10.0,
     ) -> None:
         self.object_processor = object_processor
         self.toddler_processor = toddler_processor
         self.fall_processor = fall_processor
+        self.face_processor = face_processor
         self.fps = float(fps)
 
         self._forwarder: Optional[VideoForwarder] = None
@@ -108,6 +110,11 @@ class CombinedVideoPublisher(VideoProcessorPublisher):
             if self.fall_processor is not None and hasattr(self.fall_processor, "state"):
                 fall_detections = self.fall_processor.state().get("detections", []) or []
             annotated = self._draw_detection_list(annotated, fall_detections, color=(0, 0, 255))
+
+            face_detections = []
+            if self.face_processor is not None and hasattr(self.face_processor, "state"):
+                face_detections = self.face_processor.state().get("detections", []) or []
+            annotated = self._draw_detection_list(annotated, face_detections, color=(255, 255, 0))
 
             out_frame = av.VideoFrame.from_ndarray(annotated, format="bgr24")
             out_frame.pts = frame.pts
