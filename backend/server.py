@@ -7,6 +7,7 @@ from vision_agents.core import Agent, AgentLauncher, Runner, User
 from vision_agents.plugins import cartesia, gemini, getstream
 from processors.object_detection import ObjectDetectionProcessor
 from processors.toddler_processor import ToddlerProcessor
+from processors.fall_detection import FallDetectionProcessor
 from processors.combined_video_publisher import CombinedVideoPublisher
 from processors.crying_audio_detector import CryingAudioDetector
 from processor_registry import set_crying_detector
@@ -20,19 +21,29 @@ load_dotenv()
 async def create_agent(**kwargs) -> Agent:
     _ = kwargs
     object_processor = ObjectDetectionProcessor(fps=1.0, confidence_threshold=0.5)
+    fall_processor = FallDetectionProcessor(fps=2.0)
     toddler_processor = ToddlerProcessor(fps=1) if os.getenv("ROBOFLOW_API_KEY") else None
+<<<<<<< Updated upstream
 
+=======
+    
+>>>>>>> Stashed changes
     combined_publisher = CombinedVideoPublisher(
         object_processor=object_processor,
         toddler_processor=toddler_processor,
+        fall_processor=fall_processor,
         fps=10.0,
     )
     set_publisher(combined_publisher)
 
+<<<<<<< Updated upstream
     crying_detector = CryingAudioDetector()
     set_crying_detector(crying_detector)
 
     processors: list = [object_processor, crying_detector]
+=======
+    processors: list = [object_processor, fall_processor]
+>>>>>>> Stashed changes
     if toddler_processor is not None:
         processors.append(toddler_processor)
     processors.append(combined_publisher)
