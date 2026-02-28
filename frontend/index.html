@@ -2,32 +2,12 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <link rel="icon" type="image/webp" href="/logo-dark.webp" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vision Stream Viewer</title>
-    <link rel="stylesheet" href="./styles.css" />
+    <title>Luma</title>
   </head>
   <body>
-    <main class="viewer-page">
-      <section class="panel">
-        <h1>Vision Stream Viewer</h1>
-        <p class="subtitle">Preview the MJPEG stream from your FastAPI route.</p>
-
-        <label for="streamUrl">Stream URL</label>
-        <input id="streamUrl" type="url" value="http://127.0.0.1:8000/video/stream" />
-
-        <div class="actions">
-          <button id="startBtn" type="button">Start</button>
-          <button id="stopBtn" type="button" class="secondary">Stop</button>
-        </div>
-
-        <p id="status" class="status">Status: idle</p>
-      </section>
-
-      <section class="stream-wrap">
-        <img id="stream" alt="Live video stream" />
-      </section>
-    </main>
-
-    <script src="./app.js"></script>
+    <div id="root"></div>
+    <script type="module" src="./src/main.jsx"></script>
   </body>
 </html>
