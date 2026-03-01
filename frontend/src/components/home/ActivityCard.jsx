@@ -65,7 +65,6 @@ function ActivityCard({
             {activity ? activity : "Please start the session"}
           </p>
         </div>
-
         <button
           type="button"
           onClick={onRedetectActivity}
@@ -74,7 +73,6 @@ function ActivityCard({
         >
           {isRedetecting ? "Detecting..." : "Redetect Activity"}
         </button>
-
         <button
           type="button"
           onClick={onReassessZone}
