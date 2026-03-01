@@ -4,6 +4,7 @@ export default function useLiveStream(streamUrl) {
   const imgRef = useRef(null);
   const retryRef = useRef(null);
   const statusIntervalRef = useRef(null);
+
   const [status, setStatus] = useState("idle");
   const [isLive, setIsLive] = useState(false);
 
@@ -11,21 +12,47 @@ export default function useLiveStream(streamUrl) {
     return `${url}${url.includes("?") ? "&" : "?"}t=${Date.now()}`;
   };
 
+  const statusUrl = streamUrl.replace(/\/stream(\?.*)?$/, "/status");
+
   const startStream = useCallback(() => {
     if (!imgRef.current) return;
 
     clearTimeout(retryRef.current);
+    clearInterval(statusIntervalRef.current);
 
-    setStatus("connecting...");
+    setStatus("connecting");
     setIsLive(false);
 
     imgRef.current.src = withCacheBuster(streamUrl);
-  }, [streamUrl]);
+
+    statusIntervalRef.current = setInterval(async () => {
+      try {
+        const res = await fetch(statusUrl, { cache: "no-store" });
+        if (!res.ok) return;
+
+        const data = await res.json();
+
+        if (!data.publisher_initialized) {
+          setStatus("publisher not initialized");
+          setIsLive(false);
+        } else if (!data.has_frame) {
+          setStatus("waiting for first frame");
+          setIsLive(false);
+        } else {
+          setStatus("live");
+          setIsLive(true);
+        }
+      } catch {
+        setIsLive(false);
+      }
+    }, 1000);
+  }, [streamUrl, statusUrl]);
 
   const stopStream = useCallback(() => {
     if (!imgRef.current) return;
 
     clearTimeout(retryRef.current);
+    clearInterval(statusIntervalRef.current);
 
     imgRef.current.removeAttribute("src");
 
@@ -37,55 +64,27 @@ export default function useLiveStream(streamUrl) {
     const img = imgRef.current;
     if (!img) return;
 
-    const handleLoad = () => {
-      setStatus("live");
-      setIsLive(true);
-    };
-
     const handleError = () => {
-      setStatus("no frame yet or bad URL");
-      setIsLive(false);
+      setStatus("stream error");
 
       retryRef.current = setTimeout(() => {
         startStream();
       }, 2000);
     };
 
-    img.addEventListener("load", handleLoad);
     img.addEventListener("error", handleError);
 
     return () => {
-      img.removeEventListener("load", handleLoad);
       img.removeEventListener("error", handleError);
     };
   }, [startStream]);
 
   useEffect(() => {
-    async function checkStatus() {
-      try {
-        const statusUrl = streamUrl.replace(/\/stream(\?.*)?$/, "/status");
-        const res = await fetch(statusUrl, { cache: "no-store" });
-
-        if (!res.ok) return;
-
-        const data = await res.json();
-
-        if (!data.publisher_initialized) {
-          setStatus("publisher not initialized");
-        } else if (!data.has_frame) {
-          setStatus("waiting for first video frame");
-        }
-      } catch {
-        // Ignore network errors
-      }
-    }
-
-    statusIntervalRef.current = setInterval(checkStatus, 2000);
-
     return () => {
+      clearTimeout(retryRef.current);
       clearInterval(statusIntervalRef.current);
     };
-  }, [streamUrl]);
+  }, []);
 
   return {
     imgRef,
