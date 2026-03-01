@@ -1,0 +1,42 @@
+graph TD
+    %% External Inputs
+    Cameras[IP Cameras / Client Stream] -->|WebRTC / Audio-Video| StreamEdge[GetStream Edge Network]
+    
+    %% API and Agent Layer
+    subgraph "Backend System (FastAPI + Vision Agents)"
+        API[FastAPI Routes: Video, Audio, Reports]
+        
+        StreamEdge --> Agent[Agentic Orchestrator]
+        
+        %% Processors
+        subgraph "Real-Time Processors"
+            Agent --> OD[Object Detection]
+            Agent --> FD[Fall Detection]
+            Agent --> TD[Toddler Detection]
+            Agent --> CD[Crying Audio Detection]
+            Agent --> Publisher[Combined Video Publisher]
+        end
+        
+        %% Intelligence
+        subgraph "AI & Voice"
+            Agent --> LLM[Gemini 2.5 Flash Lite]
+            Agent --> TTS[Cartesia TTS]
+        end
+        
+        %% Events Loop
+        EventLoop((Event Monitor Loop))
+        OD --> |State| EventLoop
+        FD --> |State| EventLoop
+        TD --> |State| EventLoop
+        CD --> |State| EventLoop
+        
+        %% State handlers
+        EventLoop -.-> |Triggers Alert| TTS
+    end
+
+    %% Database Layer
+    subgraph "Data Persistence"
+        EventLoop --> |log_safety_event| DB_Utils[SQLAlchemy ORM]
+        DB_Utils --> DB[(PostgreSQL Database)]
+        API --> |Fetch Reports| DB_Utils
+    end

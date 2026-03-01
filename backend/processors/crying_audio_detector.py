@@ -213,15 +213,24 @@ class CryingAudioDetector(AudioProcessor):
                 else:
                     self._buffer = np.concatenate([self._buffer, mono]).astype(np.float32, copy=False)
 
-                # Process fixed 1-second chunks at 16kHz.
+                # Process fixed 1-second chunks at 16kHz with overlapping sliding window
                 while self._buffer.size >= self._chunk_size:
-                    chunk = self._buffer[: self._chunk_size]
-                    self._buffer = self._buffer[self._chunk_step :]
-
                     now = time.time()
+                    
+                    # If we are in cooldown, don't chop the buffer completely! 
+                    # Just wait or slide forward a tiny bit if really needed.
                     if now - self._last_infer_ts < self.infer_interval_seconds:
-                        continue
+                        # Break out and let the queue fill a bit more until the cooldown expires
+                        break
+                        
                     self._last_infer_ts = now
+                    
+                    chunk = self._buffer[: self._chunk_size]
+                    
+                    # Instead of stepping by the full chunk size, we overlap 
+                    # (step forward by exactly the infer interval)
+                    step_samples = int(self.sample_rate * self.infer_interval_seconds)
+                    self._buffer = self._buffer[max(1, step_samples) :]
 
                     cry_score, top_label, top_score = self._infer_window(chunk.copy())
                     self.cry_score = cry_score

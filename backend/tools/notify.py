@@ -2,6 +2,8 @@
 
 import logging
 from typing import Annotated
+import asyncio
+from database.db_utils import log_alert
 
 # We use livekit.agents.llm to define functions the LLM can call
 try:
@@ -36,6 +38,9 @@ class NotificationTools:
         """
         prefix = f"⚠️ [{severity.upper()}] {alert_type} Alert: "
         print(f"\n{'='*50}\n{prefix}{message}\n{'='*50}\n")
+        
+        # Log to Database
+        await log_alert(alert_type=alert_type, severity=severity, message=message)
         
         # Here we would integrate with twilio / websockets / push notifications
         return f"Successfully dispatched {severity} severity alert for {alert_type}."
