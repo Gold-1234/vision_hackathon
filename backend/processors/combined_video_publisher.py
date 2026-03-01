@@ -24,12 +24,16 @@ class CombinedVideoPublisher(VideoProcessorPublisher):
         object_processor: Any,
         toddler_processor: Optional[Any] = None,
         fall_processor: Optional[Any] = None,
+        danger_guard: Optional[Any] = None,
+        zone_guard: Optional[Any] = None,
         face_processor: Optional[Any] = None,
         fps: float = 10.0,
     ) -> None:
         self.object_processor = object_processor
         self.toddler_processor = toddler_processor
         self.fall_processor = fall_processor
+        self.danger_guard = danger_guard
+        self.zone_guard = zone_guard
         self.face_processor = face_processor
         self.fps = float(fps)
 
@@ -112,7 +116,79 @@ class CombinedVideoPublisher(VideoProcessorPublisher):
                     # Find the bounding box for the falling person
                     for det in fall_state.get("detections", []):
                         if det.get("is_falling", False):
-                            annotated = draw_bbox(annotated, det.get("bbox", (0, 0, 0, 0)), label="FALL DETECTED!", color=(0, 0, 255), thickness=3)
+                            annotated = draw_bbox(
+                                annotated,
+                                det.get("bbox", (0, 0, 0, 0)),
+                                label="FALL DETECTED!",
+                                color=(0, 0, 255),
+                                thickness=3,
+                            )
+
+            if self.danger_guard is not None and hasattr(self.danger_guard, "state"):
+                danger_state = self.danger_guard.state()
+                if danger_state.get("danger_present"):
+                    alert = danger_state.get("alert") or {}
+                    toddler_bbox = alert.get("toddler_bbox")
+                    object_bbox = alert.get("object_bbox")
+                    object_label = str(alert.get("object_label", "danger"))
+                    reason = str(alert.get("reason", "")).strip()
+
+                    if toddler_bbox is not None:
+                        annotated = draw_bbox(
+                            annotated,
+                            toddler_bbox,
+                            label="TODDLER AT RISK",
+                            color=(0, 0, 255),
+                            thickness=3,
+                        )
+                    if object_bbox is not None:
+                        label = f"DANGER: {object_label}"
+                        if reason:
+                            label = f"{label} | {reason}"
+                        annotated = draw_bbox(
+                            annotated,
+                            object_bbox,
+                            label=label,
+                            color=(0, 0, 255),
+                            thickness=3,
+                        )
+
+            if self.zone_guard is not None and hasattr(self.zone_guard, "state"):
+                zone_state = self.zone_guard.state()
+                zone_bbox = zone_state.get("zone_bbox")
+                baby_point = zone_state.get("baby_point")
+                status = str(zone_state.get("status", "ZONE"))
+                near_count = int(zone_state.get("near_count", 0) or 0)
+                near_trigger_count = int(zone_state.get("near_trigger_count", 0) or 0)
+                crossed_recent = bool(zone_state.get("crossed_recent", False))
+                alert_active = bool(zone_state.get("alert_active", False))
+
+                if zone_bbox is not None:
+                    zone_color = (0, 0, 255)
+                    annotated = draw_bbox(
+                        annotated,
+                        zone_bbox,
+                        label="STAIRS ZONE",
+                        color=zone_color,
+                        thickness=2 if not alert_active else 3,
+                    )
+                if isinstance(baby_point, tuple) and len(baby_point) == 2:
+                    cv2.circle(annotated, (int(baby_point[0]), int(baby_point[1])), 6, (255, 255, 0), -1)
+                    cv2.circle(annotated, (int(baby_point[0]), int(baby_point[1])), 9, (0, 0, 0), 2)
+                if crossed_recent:
+                    status = "CROSSED STAIRS BOUNDARY"
+                if near_trigger_count > 0:
+                    status = f"{status} ({near_count}/{near_trigger_count})"
+                cv2.putText(
+                    annotated,
+                    status,
+                    (20, 36),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.9,
+                    (0, 0, 255) if (alert_active or crossed_recent) else (0, 200, 255),
+                    2,
+                    cv2.LINE_AA,
+                )
 
             face_detections = []
             if self.face_processor is not None and hasattr(self.face_processor, "state"):

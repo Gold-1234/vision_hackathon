@@ -4,8 +4,11 @@ from .object_detection import ObjectDetectionProcessor
 from .toddler_processor import ToddlerProcessor
 from .combined_video_publisher import CombinedVideoPublisher
 from .crying_audio_detector import CryingAudioDetector
+from .toddler_danger_guard import ToddlerDangerGuard
 from .face_detection import FaceDetectionProcessor
 from .face_recognition import FaceRecognitionProcessor
+from .fall_detection import FallDetectionProcessor
+from .zone_risk_guard import ZoneRiskGuard
 
 try:
     from .fall_detection import FallDetectionProcessor

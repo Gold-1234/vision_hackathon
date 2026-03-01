@@ -11,7 +11,7 @@ load_dotenv()
 
 async def main() -> None:
     call_type = os.getenv("STREAM_CALL_TYPE", "default")
-    call_id = os.getenv("STREAM_CALL_ID", "vision-test")
+    call_id = os.getenv("STREAM_CALL_ID", "vision-test-1")
     human_id = os.getenv("STREAM_HUMAN_USER_ID", "user-demo-agent")
     creator_id = os.getenv("STREAM_CREATOR_ID", "agent")
 

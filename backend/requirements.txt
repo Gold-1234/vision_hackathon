@@ -1,4 +1,4 @@
-vision-agents[gemini,getstream]==0.3.8
+vision-agents[gemini,getstream, moondream]==0.3.8
 vision-agents-plugins-cartesia==0.3.8
 python-dotenv==1.2.1
 roboflow==1.2.14
