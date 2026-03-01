@@ -1,6 +1,8 @@
 import Navbar from "../components/global/Navbar";
 import ActivityCard from "../components/home/ActivityCard";
 import NotificationCard from "../components/home/NotificationCard";
+import useLiveStream from "../hooks/useLiveStream";
+import useVisionCall from "../hooks/useVisionCall";
 
 function HomePage() {
   const notif = [
@@ -14,6 +16,23 @@ function HomePage() {
     },
   ];
 
+  const { imgRef, startStream, stopStream, status, isLive } = useLiveStream(
+    "http://127.0.0.1:8000/video/stream",
+  );
+
+  const { joinCall, leaveCall } = useVisionCall();
+
+  const handleStart = async () => {
+    const callId = 'vision-test-1'
+    await joinCall(callId);
+    startStream();
+  }
+
+  const handleStop = async () => {
+    stopStream();
+    await leaveCall();
+  }
+
   return (
     <div>
       <Navbar></Navbar>
@@ -23,8 +42,20 @@ function HomePage() {
 
         <div className="flex flex-col gap-8">
           <div className="flex items-start gap-8">
-            <div className="w-full h-[40rem] bg-grey rounded-3xl"></div>
-            <ActivityCard></ActivityCard>
+            <div className="w-full h-[40rem] bg-grey rounded-3xl overflow-hidden">
+              <img
+                ref={imgRef}
+                alt="Live stream"
+                className="w-full h-full object-contain"
+              />
+            </div>
+
+            <ActivityCard
+              onStart={handleStart}
+              onStop={handleStop}
+              streamStatus={status}
+              isLive={isLive}
+            ></ActivityCard>
           </div>
 
           <div className="flex flex-col gap-5">
