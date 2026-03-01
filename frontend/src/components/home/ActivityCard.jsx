@@ -1,17 +1,19 @@
 import { useEffect, useRef, useState } from "react";
 import PlayButton from "./PlayButton";
-import InputBox from "./InputBox";
 
 function ActivityCard({
   activity,
+  zoneText,
   onStart,
   onStop,
   streamStatus,
   isLive,
-  setUrl,
-  url,
-  isPlaying,
+  onRedetectActivity,
+  isRedetecting,
+  onReassessZone,
+  isReassessingZone,
 }) {
+  const [isPlaying, setIsPlaying] = useState(false);
   const [time, setTime] = useState(0);
   const intervalRef = useRef(null);
 
@@ -36,6 +38,8 @@ function ActivityCard({
     } else {
       onStop && onStop();
     }
+
+    setIsPlaying(!isPlaying);
   };
 
   const formatTime = (milliseconds) => {
@@ -51,17 +55,7 @@ function ActivityCard({
 
   return (
     <div className="flex flex-col bg-white p-6 box-shadow rounded-3xl gap-7">
-      <div className="flex flex-col gap-4">
-        <InputBox
-          label={"Steam URL"}
-          type={"text"}
-          placeholder={"Enter a connection link"}
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-        ></InputBox>
-
-        <PlayButton isPlaying={isPlaying} onClick={handlePlay}></PlayButton>
-      </div>
+      <PlayButton isPlaying={isPlaying} onClick={handlePlay}></PlayButton>
 
       <div className="flex flex-col gap-2">
         <h4 className="h4">Current Activity</h4>
@@ -70,6 +64,28 @@ function ActivityCard({
           <p className="p1">
             {activity ? activity : "Please start the session"}
           </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={onRedetectActivity}
+          disabled={!isLive || isRedetecting}
+          className="mt-2 rounded-lg bg-black text-white px-3 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isRedetecting ? "Detecting..." : "Redetect Activity"}
+        </button>
+
+        <button
+          type="button"
+          onClick={onReassessZone}
+          disabled={!isLive || isReassessingZone}
+          className="rounded-lg bg-red-600 text-white px-3 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isReassessingZone ? "Reassessing Zone..." : "Reassess Zone"}
+        </button>
+
+        <div className="bg-grey-trans px-4 py-1 rounded-lg">
+          <p className="small grey">Current Zone: {zoneText || "Not set"}</p>
         </div>
       </div>
 
