@@ -1,8 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import PlayButton from "./PlayButton";
+import InputBox from "./InputBox";
 
-function ActivityCard({ activity, onStart, onStop, streamStatus, isLive }) {
-  const [isPlaying, setIsPlaying] = useState(false);
+function ActivityCard({
+  activity,
+  onStart,
+  onStop,
+  streamStatus,
+  isLive,
+  setUrl,
+  url,
+  isPlaying,
+}) {
   const [time, setTime] = useState(0);
   const intervalRef = useRef(null);
 
@@ -27,8 +36,6 @@ function ActivityCard({ activity, onStart, onStop, streamStatus, isLive }) {
     } else {
       onStop && onStop();
     }
-
-    setIsPlaying(!isPlaying);
   };
 
   const formatTime = (milliseconds) => {
@@ -43,8 +50,18 @@ function ActivityCard({ activity, onStart, onStop, streamStatus, isLive }) {
   };
 
   return (
-    <div className="flex flex-col bg-white p-6 box-shadow rounded-3xl gap-7 w-96">
-      <PlayButton isPlaying={isPlaying} onClick={handlePlay}></PlayButton>
+    <div className="flex flex-col bg-white p-6 box-shadow rounded-3xl gap-7">
+      <div className="flex flex-col gap-4">
+        <InputBox
+          label={"Steam URL"}
+          type={"text"}
+          placeholder={"Enter a connection link"}
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+        ></InputBox>
+
+        <PlayButton isPlaying={isPlaying} onClick={handlePlay}></PlayButton>
+      </div>
 
       <div className="flex flex-col gap-2">
         <h4 className="h4">Current Activity</h4>
