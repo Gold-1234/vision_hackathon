@@ -1,2 +1,50 @@
-.env
+# OS / Editor
 .DS_Store
+.vscode/
+.idea/
+
+# Environment / virtualenv
+.env
+backend/.env
+frontend/.env
+.venv/
+backend/.venv/
+frontend/.venv/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+.pytest_cache/
+.mypy_cache/
+
+# Node artifacts
+node_modules/
+frontend/node_modules/
+
+# Build artifacts
+dist/
+build/
+frontend/dist/
+frontend/dist-ssr/
+
+# Runtime logs
+*.log
+logs/
+
+# Runtime data outputs (generated)
+data/test_results/
+backend/data/test_results/
+data/alerts/
+backend/data/alerts/
+
+# Vision/ML generated debug files
+backend/data/test_results/zone_risk/
+data/test_results/zone_risk/
+
+# Large local model files at repo root
+*.pt
+*.onnx
+*.tflite
