@@ -4,6 +4,7 @@ import os
 import time
 
 from dotenv import load_dotenv
+from fastapi.middleware.cors import CORSMiddleware
 
 from vision_agents.core import Agent, AgentLauncher, Runner, User
 from vision_agents.plugins import cartesia, gemini, getstream
@@ -14,10 +15,9 @@ from processors.toddler_danger_guard import ToddlerDangerGuard
 from processors.combined_video_publisher import CombinedVideoPublisher
 from processors.zone_risk_guard import ZoneRiskGuard
 from processors.crying_audio_detector import CryingAudioDetector
-# from processors.face_recognition import FaceRecognitionProcessor
-from processor_registry import set_crying_detector
-from processor_registry import set_face_recognizer
-from routes import video_router, audio_router, faces_router
+from processors.face_recognition import FaceRecognitionProcessor
+from processor_registry import set_crying_detector, set_face_recognizer, set_zone_guard
+from routes import video_router, audio_router, faces_router, auth_router
 from tools.alert_sink import write_alert
 from video_stream_registry import set_publisher
 
@@ -39,6 +39,9 @@ async def create_agent(**kwargs) -> Agent:
     zone_init_retry_interval_frames = int(os.getenv("ZONE_RISK_INIT_RETRY_INTERVAL_FRAMES", "30"))
     zone_max_init_attempts = int(os.getenv("ZONE_RISK_MAX_INIT_ATTEMPTS", "0"))
     zone_debug_dir = os.getenv("ZONE_RISK_DEBUG_DIR", "data/test_results/zone_risk")
+    face_recognition_enabled = os.getenv("FACE_RECOGNITION_ENABLED", "true").lower() == "true"
+    face_det_thresh = float(os.getenv("FACE_DET_THRESH", "0.35"))
+    face_match_threshold = float(os.getenv("FACE_MATCH_THRESHOLD", "0.35"))
 
     object_processor = ObjectDetectionProcessor(
         fps=1.0,
@@ -87,12 +90,19 @@ async def create_agent(**kwargs) -> Agent:
         if toddler_processor is not None
         else None
     )
-    # face_processor = FaceRecognitionProcessor(
-    #     fps=2.0,
-    #     gallery_dir="data/known_faces",
-    #     match_threshold=0.35,
-    # )
-    # set_face_recognizer(face_processor)
+    face_processor = None
+    if face_recognition_enabled:
+        try:
+            face_processor = FaceRecognitionProcessor(
+                fps=2.0,
+                gallery_dir="data/known_faces",
+                det_thresh=face_det_thresh,
+                match_threshold=face_match_threshold,
+            )
+        except Exception as exc:
+            logging.warning("FaceRecognitionProcessor disabled: %s", exc)
+            face_processor = None
+    set_face_recognizer(face_processor)
 
     combined_publisher = CombinedVideoPublisher(
         object_processor=object_processor,
@@ -100,10 +110,11 @@ async def create_agent(**kwargs) -> Agent:
         fall_processor=fall_processor,
         danger_guard=danger_guard,
         zone_guard=zone_guard,
-        face_processor=None,
+        face_processor=face_processor,
         fps=10.0,
     )
     set_publisher(combined_publisher)
+    set_zone_guard(zone_guard)
 
     crying_detector = CryingAudioDetector()
     set_crying_detector(crying_detector)
@@ -116,6 +127,8 @@ async def create_agent(**kwargs) -> Agent:
     processors.extend([object_processor, fall_processor])
     if danger_guard is not None:
         processors.append(danger_guard)
+    if face_processor is not None:
+        processors.append(face_processor)
     processors.append(combined_publisher)
 
     if crying_detector:
@@ -139,13 +152,19 @@ async def create_agent(**kwargs) -> Agent:
     agent._fall_processor = fall_processor
     agent._danger_guard = danger_guard
     agent._zone_guard = zone_guard
+    agent._face_processor = face_processor
 
     return agent
 
 
 async def join_call(agent: Agent, call_type: str, call_id: str, **kwargs) -> None:
     _ = kwargs
-    # Face recognition disabled for this config
+    face_processor = getattr(agent, "_face_processor", None)
+    if face_processor is not None and hasattr(face_processor, "set_active_call_id"):
+        try:
+            face_processor.set_active_call_id(call_id)
+        except Exception:
+            pass
     # Stream edge transport relies on agent user initialization before call creation.
     await agent.create_user()
     call = await agent.create_call(call_type, call_id)
@@ -162,6 +181,7 @@ async def join_call(agent: Agent, call_type: str, call_id: str, **kwargs) -> Non
         fall_processor = getattr(agent, "_fall_processor", None)
         danger_guard = getattr(agent, "_danger_guard", None)
         zone_guard = getattr(agent, "_zone_guard", None)
+        face_processor = getattr(agent, "_face_processor", None)
         # toddler_processor = getattr(agent, "_toddler_processor", None)
         fall_announced = False
         danger_announced = False
@@ -293,6 +313,23 @@ async def join_call(agent: Agent, call_type: str, call_id: str, **kwargs) -> Non
                         zone_announced = False
                         last_zone_key = None
 
+                if face_processor is not None:
+                    face_state = face_processor.state() if hasattr(face_processor, "state") else {}
+                    if bool(face_state.get("unknown_detected", False)):
+                        now_ts = time.time()
+                        if unknown_face_announced_ts is None or (now_ts - unknown_face_announced_ts) >= 10.0:
+                            write_alert(
+                                {
+                                    "alert_type": "unknown_face_detected",
+                                    "call_type": call_type,
+                                    "call_id": call_id,
+                                    "risk": "unknown_person",
+                                    "reason": "Unknown face detected while monitoring toddler.",
+                                }
+                            )
+                            await safe_speak("Warning. Unknown person detected near the child.")
+                            unknown_face_announced_ts = now_ts
+
                 # Unknown face alerts disabled for this config
         finally:
             await agent.finish()
@@ -305,7 +342,20 @@ if __name__ == "__main__":
             join_call=join_call,
         )
     )
+    allow_origins_raw = os.getenv(
+        "CORS_ALLOW_ORIGINS",
+        "http://localhost:5173,http://127.0.0.1:5173",
+    )
+    allow_origins = [origin.strip() for origin in allow_origins_raw.split(",") if origin.strip()]
+    runner.fast_api.add_middleware(
+        CORSMiddleware,
+        allow_origins=allow_origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
     runner.fast_api.include_router(video_router)
     runner.fast_api.include_router(audio_router)
     runner.fast_api.include_router(faces_router)
+    runner.fast_api.include_router(auth_router)
     runner.cli()

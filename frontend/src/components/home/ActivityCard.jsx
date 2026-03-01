@@ -1,7 +1,18 @@
 import { useEffect, useRef, useState } from "react";
 import PlayButton from "./PlayButton";
 
-function ActivityCard({ activity, onStart, onStop, streamStatus, isLive }) {
+function ActivityCard({
+  activity,
+  zoneText,
+  onStart,
+  onStop,
+  streamStatus,
+  isLive,
+  onRedetectActivity,
+  isRedetecting,
+  onReassessZone,
+  isReassessingZone,
+}) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [time, setTime] = useState(0);
   const intervalRef = useRef(null);
@@ -54,6 +65,25 @@ function ActivityCard({ activity, onStart, onStop, streamStatus, isLive }) {
             {activity ? activity : "Please start the session"}
           </p>
         </div>
+        <button
+          type="button"
+          onClick={onRedetectActivity}
+          disabled={!isLive || isRedetecting}
+          className="mt-2 rounded-lg bg-black text-white px-3 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isRedetecting ? "Detecting..." : "Redetect Activity"}
+        </button>
+        <button
+          type="button"
+          onClick={onReassessZone}
+          disabled={!isLive || isReassessingZone}
+          className="rounded-lg bg-red-600 text-white px-3 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isReassessingZone ? "Reassessing Zone..." : "Reassess Zone"}
+        </button>
+        <p className="small grey">
+          Current Zone: {zoneText || "Not set"}
+        </p>
       </div>
 
       <div className="">

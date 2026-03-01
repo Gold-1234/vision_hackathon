@@ -25,7 +25,7 @@ class FaceRecognitionProcessor(VideoProcessor):
         fps: float = 2.0,
         model_name: str = "buffalo_s",
         det_size: tuple[int, int] = (640, 640),
-        det_thresh: float = 0.5,
+        det_thresh: float = 0.35,
         providers: Optional[list[str]] = None,
         gallery_dir: str = "data/known_faces",
         match_threshold: float = 0.35,
@@ -56,6 +56,8 @@ class FaceRecognitionProcessor(VideoProcessor):
         self.latest_detections: list[dict[str, Any]] = []
         self.unknown_detected: bool = False
         self.last_unknown_ts: Optional[float] = None
+        self._last_log_ts: float = 0.0
+        self._log_interval_seconds: float = 2.0
 
         self._forwarder: Optional[VideoForwarder] = None
         self._owns_forwarder = False
@@ -203,6 +205,17 @@ class FaceRecognitionProcessor(VideoProcessor):
 
             self.unknown_detected = True
             self.last_unknown_ts = time.time()
+        import time
+
+        now = time.time()
+        if now - self._last_log_ts >= self._log_interval_seconds:
+            self._logger.info(
+                "face-recognition | faces=%d unknown_seen=%s active_call_id=%s",
+                len(detections),
+                unknown_seen,
+                self.active_call_id,
+            )
+            self._last_log_ts = now
         return detections
 
     def _match_face(self, face: Any) -> tuple[str, float]:

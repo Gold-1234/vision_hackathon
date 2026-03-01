@@ -173,6 +173,18 @@ Playable sample outputs:
 ### test_results_6.mp4
 <video src="backend/data/test_results/test_results_6.mp4" controls width="720"></video>
 
+## Frontend app call flow (recommended)
+- Frontend joins Stream call via backend token endpoint:
+  - `POST /auth/stream-token`
+- Backend agent joins same `call_id`, processes incoming user camera.
+- Frontend displays processed output from:
+  - `GET /video/stream`
+
+For Vite frontend, set:
+```env
+VITE_BACKEND_URL=http://127.0.0.1:8000
+```
+
 ## Notes
 - `person` class is filtered from object overlay/state.
 - Zone is locked after detection; not continuously re-detected.

@@ -225,6 +225,35 @@ class ZoneRiskGuard(VideoProcessor):
             elif self._near_count == 0:
                 self.alert_active = False
 
+    async def reassess_zone(self, image_bgr: Any) -> dict[str, Any]:
+        """
+        Force re-assessment of risky zone from a provided frame.
+        Keeps zone locked to the newly detected bbox if successful.
+        """
+        async with self._processing_lock:
+            frame_h, frame_w = image_bgr.shape[:2]
+            self._init_attempts += 1
+            self._last_init_try_frame = self._frame_counter
+            zone, init_result = await asyncio.to_thread(self._detect_stairs_zone, image_bgr, frame_w, frame_h)
+            self._init_result = init_result
+            if zone is not None:
+                expanded = self._expand_bbox(zone, frame_w, frame_h, self.zone_expand_ratio)
+                self._set_locked_zone(expanded, frame_w, frame_h)
+                self.stairs_zone_reason = "moondream-redetected"
+                self._zone_initialized = True
+                ok = True
+            else:
+                ok = False
+
+            self._save_zone_snapshot(image_bgr)
+            self._save_init_result()
+            return {
+                "ok": ok,
+                "zone_bbox": self.stairs_zone,
+                "zone_reason": self.stairs_zone_reason,
+                "init_attempts": self._init_attempts,
+            }
+
     def _detect_stairs_zone(
         self,
         image_bgr: Any,

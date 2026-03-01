@@ -193,7 +193,17 @@ class CombinedVideoPublisher(VideoProcessorPublisher):
             face_detections = []
             if self.face_processor is not None and hasattr(self.face_processor, "state"):
                 face_detections = self.face_processor.state().get("detections", []) or []
-            annotated = self._draw_detection_list(annotated, face_detections, color=(255, 255, 0))
+            # Draw unknown faces in red for high visibility, known faces in yellow.
+            known_faces = []
+            unknown_faces = []
+            for det in face_detections:
+                label = str(det.get("label", "")).strip().lower()
+                if label == "unknown":
+                    unknown_faces.append(det)
+                else:
+                    known_faces.append(det)
+            annotated = self._draw_detection_list(annotated, known_faces, color=(255, 255, 0))
+            annotated = self._draw_detection_list(annotated, unknown_faces, color=(0, 0, 255))
 
             out_frame = av.VideoFrame.from_ndarray(annotated, format="bgr24")
             out_frame.pts = frame.pts

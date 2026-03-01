@@ -36,8 +36,8 @@ async def enroll_face(
     if not contents:
         raise HTTPException(status_code=400, detail="Empty image upload")
 
-    # Save to disk under data/know_faces/<call_id>/<name>.<ext>
-    base_dir = Path("data/know_faces") / call_id
+    # Save to disk under data/known_faces/<call_id>/<name>.<ext>
+    base_dir = Path("data/known_faces") / call_id
     base_dir.mkdir(parents=True, exist_ok=True)
     dest = base_dir / f"{safe_name}{ext}"
     dest.write_bytes(contents)
