@@ -127,13 +127,9 @@ async def create_agent(**kwargs) -> Agent:
     crying_detector = CryingAudioDetector()
     set_crying_detector(crying_detector)
 
-<<<<<<< Updated upstream
-    processors: list = []
-=======
     # Initialize processor list with all components
     processors: list = [object_processor, fall_processor, crying_detector]
     
->>>>>>> Stashed changes
     if toddler_processor is not None:
         processors.append(toddler_processor)
     if zone_guard is not None:
@@ -192,7 +188,6 @@ async def join_call(agent: Agent, call_type: str, call_id: str, **kwargs) -> Non
     await agent.create_user()
     call = await agent.create_call(call_type, call_id)
     async with agent.join(call):
-<<<<<<< Updated upstream
         async def safe_speak(text: str) -> None:
             try:
                 await agent.simple_response(text)
@@ -219,6 +214,15 @@ async def join_call(agent: Agent, call_type: str, call_id: str, **kwargs) -> Non
             os.getenv("ZONE_SPEECH_COOLDOWN_SECONDS", str(speech_cooldown_seconds))
         )
         unknown_face_announced_ts: float | None = None
+        
+        last_logged = {
+            "fall": 0,
+            "object": 0,
+            "toddler": 0,
+            "crying": 0
+        }
+        cooldown_sec = 5.0
+        
         try:
             while True:
                 await asyncio.sleep(0.25)
@@ -355,68 +359,43 @@ async def join_call(agent: Agent, call_type: str, call_id: str, **kwargs) -> Non
                             unknown_face_announced_ts = now_ts
 
                 # Unknown face alerts disabled for this config
-=======
-        await agent.simple_response("Safety monitoring active.")
-        
-        fall_processor = getattr(agent, "_fall_processor", None)
-        object_processor = getattr(agent, "_object_processor", None)
-        toddler_processor = getattr(agent, "_toddler_processor", None)
-        crying_detector = getattr(agent, "_crying_detector", None)
-        
-        fall_announced = False
-        last_logged = {
-            "fall": 0,
-            "object": 0,
-            "toddler": 0,
-            "crying": 0
-        }
-        cooldown_sec = 5.0  # Debounce events so we don't spam the database
-        
-        try:
-            while True:
-                await asyncio.sleep(0.5)
-                current_time = time.time()
                 
-                # Check Fall
+                # Check DB logging for Fall
+                current_time = time.time()
                 if fall_processor:
                     fall_state = fall_processor.state()
-                    fall_now = bool(fall_state.get("fall_detected", False))
-                    if fall_now:
-                        if not fall_announced:
-                            await agent.simple_response("Fall detected")
-                            fall_announced = True
-                        
+                    if fall_state.get("fall_present", False):
                         if current_time - last_logged["fall"] > cooldown_sec:
                             await log_safety_event(event_type="FallDetected", metadata=fall_state)
                             last_logged["fall"] = current_time
-                    elif not fall_now and fall_announced:
-                        fall_announced = False
-                
-                # Check Object
+                            
+                # Check DB logging for Object
+                object_processor = getattr(agent, "_object_processor", None)
                 if object_processor:
                     obj_state = object_processor.state()
-                    if obj_state.get("objects"):
+                    if obj_state.get("detections"):
                         if current_time - last_logged["object"] > cooldown_sec:
                             await log_safety_event(event_type="ObjectDetected", metadata=obj_state)
                             last_logged["object"] = current_time
-                
-                # Check Toddler
+                            
+                # Check DB logging for Toddler
+                toddler_processor = getattr(agent, "_toddler_processor", None)
                 if toddler_processor:
                     tod_state = toddler_processor.state()
-                    if tod_state.get("toddler_detected", False):
+                    if tod_state.get("toddler_present", False):
                         if current_time - last_logged["toddler"] > cooldown_sec:
                             await log_safety_event(event_type="ToddlerDetected", metadata=tod_state)
                             last_logged["toddler"] = current_time
                             
-                # Check Crying
+                # Check DB logging for Crying
+                crying_detector = getattr(agent, "_crying_detector", None)
                 if crying_detector:
                     cry_state = crying_detector.state()
-                    if cry_state.get("crying_detected", False):
+                    if cry_state.get("cry_detected", False):
                         if current_time - last_logged["crying"] > cooldown_sec:
                             await log_safety_event(event_type="CryingDetected", metadata=cry_state)
                             last_logged["crying"] = current_time
 
->>>>>>> Stashed changes
         finally:
             await agent.finish()
 
@@ -444,10 +423,7 @@ if __name__ == "__main__":
     )
     runner.fast_api.include_router(video_router)
     runner.fast_api.include_router(audio_router)
-<<<<<<< Updated upstream
     runner.fast_api.include_router(faces_router)
     runner.fast_api.include_router(auth_router)
-=======
     runner.fast_api.include_router(reports_router)
->>>>>>> Stashed changes
     runner.cli()
