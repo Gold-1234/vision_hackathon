@@ -2,6 +2,7 @@ import Navbar from "../components/global/Navbar";
 import ActivityCard from "../components/home/ActivityCard";
 import NotificationCard from "../components/home/NotificationCard";
 import useLiveStream from "../hooks/useLiveStream";
+import useVisionCall from "../hooks/useVisionCall";
 
 function HomePage() {
   const notif = [
@@ -18,6 +19,19 @@ function HomePage() {
   const { imgRef, startStream, stopStream, status, isLive } = useLiveStream(
     "http://127.0.0.1:8000/video/stream",
   );
+
+  const { joinCall, leaveCall } = useVisionCall();
+
+  const handleStart = async () => {
+    const callId = 'vision-test-1'
+    await joinCall(callId);
+    startStream();
+  }
+
+  const handleStop = async () => {
+    stopStream();
+    await leaveCall();
+  }
 
   return (
     <div>
@@ -37,8 +51,8 @@ function HomePage() {
             </div>
 
             <ActivityCard
-              onStart={startStream}
-              onStop={stopStream}
+              onStart={handleStart}
+              onStop={handleStop}
               streamStatus={status}
               isLive={isLive}
             ></ActivityCard>
