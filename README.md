@@ -3,6 +3,8 @@
 AI safety monitoring for toddlers using live video + audio.  
 The system watches only when a toddler is present, detects high-risk situations, verifies context, and speaks alerts in real time.
 
+https://github.com/user-attachments/assets/cf2375ec-a042-4e03-8642-32208c0fe03b
+
 ## Why This Can Win
 - Clear real-world problem: home child safety.
 - Multi-signal intelligence: toddler presence, dangerous objects, fall events, and risky-zone crossing.
@@ -155,23 +157,28 @@ backend/.venv/bin/python backend/tools/run_zone_risk_video.py \
 ## Example Outputs
 Playable sample outputs:
 
-### test_7_full_pipeline_rerun.mp4
-<video src="backend/data/test_results/test_7_full_pipeline_rerun.mp4" controls width="720"></video>
 
-### test_1_out.mp4
-<video src="backend/data/test_results/test_1_out.mp4" controls width="720"></video>
 
-### test_result_1.mp4
-<video src="backend/data/test_results/test_result_1.mp4" controls width="720"></video>
 
-### test_result_2.mp4
-<video src="backend/data/test_results/test_result_2.mp4" controls width="720"></video>
 
-### test_result_3.mp4
-<video src="backend/data/test_results/test_result_3.mp4" controls width="720"></video>
+### detecting fall
 
-### test_results_6.mp4
-<video src="backend/data/test_results/test_results_6.mp4" controls width="720"></video>
+https://github.com/user-attachments/assets/3cf9fc34-4e2a-473b-ac9a-1b9b3186367a
+
+
+
+
+https://github.com/user-attachments/assets/dfba8701-e333-4631-8304-150e45008659
+
+
+
+### Danger detection
+
+
+
+https://github.com/user-attachments/assets/b82c33c8-4a76-4fad-a6cc-2a5d7656121e
+
+
 
 ## Frontend app call flow (recommended)
 - Frontend joins Stream call via backend token endpoint:
