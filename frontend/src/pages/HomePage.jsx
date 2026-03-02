@@ -52,52 +52,6 @@ function HomePage() {
     if (!isLive) return;
     setIsRedetecting(true);
     try {
-      const resp = await fetch(`$${backendBaseUrl}/video/current-activity`, {
-        method: "POST",
-      });
-      const payload = await resp.json();
-      if (!resp.ok) {
-        throw new Error(payload?.detail || `Request failed (${resp.status})`);
-      }
-      setActivity(payload.activity || "No activity description returned.");
-    } catch (err) {
-      console.error("Redetect activity failed:", err);
-      setActivity(`Activity detection failed: ${err?.message || err}`);
-    } finally {
-      setIsRedetecting(false);
-    }
-  };
-
-  const handleReassessZone = async () => {
-    if (!isLive) return;
-    setIsReassessingZone(true);
-    try {
-      const resp = await fetch(`${backendBaseUrl}/video/reassess-zone`, {
-        method: "POST",
-      });
-      const payload = await resp.json();
-      if (!resp.ok) {
-        throw new Error(payload?.detail || `Request failed (${resp.status})`);
-      }
-      const bbox = payload.zone_bbox;
-      const reason = payload.zone_reason || "unknown";
-      if (Array.isArray(bbox) || (bbox && typeof bbox === "object")) {
-        setZoneText(`${JSON.stringify(bbox)} (${reason})`);
-      } else {
-        setZoneText(`Not detected (${reason})`);
-      }
-    } catch (err) {
-      console.error("Reassess zone failed:", err);
-      setZoneText(`Zone reassess failed: ${err?.message || err}`);
-    } finally {
-      setIsReassessingZone(false);
-    }
-  };
-
-  const handleRedetectActivity = async () => {
-    if (!isLive) return;
-    setIsRedetecting(true);
-    try {
       const resp = await fetch(`${backendBaseUrl}/video/current-activity`, {
         method: "POST",
       });

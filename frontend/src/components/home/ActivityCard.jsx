@@ -59,12 +59,12 @@ function ActivityCard({
 
       <div className="flex flex-col gap-2">
         <h4 className="h4">Current Activity</h4>
-        <div className="flex items-center gap-4">
+        {/* <div className="flex items-center gap-4">
           <div className="bg-grey w-2 h-2 rounded"></div>
           <p className="p1">
             {activity ? activity : "Please start the session"}
           </p>
-        </div>
+        </div> */}
         <button
           type="button"
           onClick={onRedetectActivity}

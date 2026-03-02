@@ -1,118 +1,60 @@
+import { useEffect, useState } from "react";
 import Navbar from "../components/global/Navbar";
 import ReportDropdown from "../components/daily-reports/ReportDropdown";
 
 function DailyReportsPage() {
-  const reports = [
-    {
-      date: "Monday, February 23, 2026",
-      header: "A balanced day with gentle exploration and calm rest periods.",
-      activities: [
-        {
-          id: 1,
-          text: "3 falls were detected today.",
-        },
-        {
-          id: 2,
-          text: "Self-impact behavior was observed.",
-        },
-        {
-          id: 3,
-          text: "An extended inactivity period was detected.",
-        },
-      ],
-      suggestions: [
-        {
-          id: 1,
-          text: "Check for injury and monitor responsiveness.",
-        },
-        {
-          id: 2,
-          text: "Offer safe emotional regulation alternatives.",
-        },
-        {
-          id: 3,
-          text: "Encourage gentle movement and assess responsiveness.",
-        },
-      ],
-    },
-    {
-      date: "Sunday, February 22, 2026",
-      header: "A peaceful day with steady rhythms and imaginative play.",
-      activities: [
-        {
-          id: 1,
-          text: "3 falls were detected today.",
-        },
-        {
-          id: 2,
-          text: "Self-impact behavior was observed.",
-        },
-        {
-          id: 3,
-          text: "An extended inactivity period was detected.",
-        },
-      ],
-      suggestions: [
-        {
-          id: 1,
-          text: "Check for injury and monitor responsiveness.",
-        },
-        {
-          id: 2,
-          text: "Offer safe emotional regulation alternatives.",
-        },
-        {
-          id: 3,
-          text: "Encourage gentle movement and assess responsiveness.",
-        },
-      ],
-    },
-    {
-      date: "Saturday, February 21, 2026",
-      header: "A lively and exploratory day with high morning energy.",
-      activities: [
-        {
-          id: 1,
-          text: "3 falls were detected today.",
-        },
-        {
-          id: 2,
-          text: "Self-impact behavior was observed.",
-        },
-        {
-          id: 3,
-          text: "An extended inactivity period was detected.",
-        },
-      ],
-      suggestions: [
-        {
-          id: 1,
-          text: "Check for injury and monitor responsiveness.",
-        },
-        {
-          id: 2,
-          text: "Offer safe emotional regulation alternatives.",
-        },
-        {
-          id: 3,
-          text: "Encourage gentle movement and assess responsiveness.",
-        },
-      ],
-    },
-  ];
+  const [reports, setReports] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchDailyReports();
+  }, []);
+
+  const fetchDailyReports = async () => {
+    try {
+      const res = await fetch(
+        "http://127.0.0.1:8000/api/reports/daily?limit=7",
+      );
+
+      const data = await res.json();
+
+      const formatted = data.daily_reports.map((report) => ({
+        date: report.date,
+        header: report.summary,
+        activities: report.highlights.map((text, index) => ({
+          id: `a-${index}`,
+          text,
+        })),
+        suggestions: report.suggestions.map((text, index) => ({
+          id: `s-${index}`,
+          text,
+        })),
+      }));
+
+      setReports(formatted);
+    } catch (err) {
+      console.error("Failed to fetch daily reports:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div>
-      <Navbar></Navbar>
+      <Navbar />
 
       <div className="section">
         <h1 className="h1">Daily Reports</h1>
 
-        <div className="flex flex-col gap-7">
-          {reports.map((v, i) => (
-            <ReportDropdown value={v}></ReportDropdown>
-          ))}
-        </div>
+        {loading ? (
+          <p className="p1">Loading reports...</p>
+        ) : (
+          <div className="flex flex-col gap-7">
+            {reports.map((v, i) => (
+              <ReportDropdown key={i} value={v} />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
